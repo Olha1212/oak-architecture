@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OAK - Architecture + Urban Design + Interior Design</title>
+<!-- Suisse Int'l system-font fallback stack: geometric grotesque, closest to Suisse Int'l Light -->
+<style>
+  /* @font-face { font-family: 'Suisse Intl'; src: url('/fonts/SuisseIntl-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; } */
+</style>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #0f0d0a;
+    --bone: #f5f0e8;
+    --cream: #ede8de;
+    --rust: #b85c38;
+    --rust-light: #d4755a;
+    --sand: #c9b99a;
+    --muted: #7a7068;
+    --white: #faf8f4;
+    /* Suisse Int'l system fallback — geometric grotesque stack */
+    --sans: 'Suisse Intl', 'Helvetica Neue', 'Helvetica', 'Arial', system-ui, sans-serif;
+    --mono: 'Suisse Intl Mono', 'Courier New', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bone);
+    color: var(--ink);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--rust);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.3s, height 0.3s, background 0.3s;
+    mix-blend-mode: multiply;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid var(--rust);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease-out, width 0.3s, height 0.3s, opacity 0.3s;
+    opacity: 0.5;
+  }
+  .cursor.hover { width: 20px; height: 20px; background: var(--rust-light); }
+  .cursor-ring.hover { width: 60px; height: 60px; opacity: 0.2; }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9997;
+    opacity: 0.5;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 52px;
+    mix-blend-mode: multiply;
+  }
+  .nav-logo {
+    font-family: var(--sans);
+    font-size: 13px;
+    letter-spacing: 0.35em;
+    font-weight: 300;
+    color: var(--ink);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .nav-logo-mark { flex-shrink: 0; }
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    font-weight: 300;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--rust); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+  }
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 140px 52px 80px;
+    position: relative;
+    z-index: 2;
+  }
+  .hero-eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--rust);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.3s ease forwards;
+  }
+  .hero-title {
+    font-family: var(--sans);
+    font-size: clamp(64px, 7vw, 110px);
+    font-weight: 300;
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    opacity: 0;
+    animation: fadeUp 0.9s 0.5s ease forwards;
+  }
+  .hero-title em {
+    font-style: italic;
+    color: var(--rust);
+  }
+  .hero-sub {
+    margin-top: 32px;
+    font-size: 17px;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--muted);
+    max-width: 380px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.7s ease forwards;
+  }
+  .hero-cta {
+    margin-top: 48px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.9s ease forwards;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 32px;
+    background: var(--ink);
+    color: var(--bone);
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  .btn-primary:hover { background: var(--rust); }
+  .btn-secondary {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--sand);
+    padding-bottom: 2px;
+    transition: color 0.3s, border-color 0.3s;
+  }
+  .btn-secondary:hover { color: var(--rust); border-color: var(--rust); }
+
+  .hero-right {
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-mosaic {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 4px;
+  }
+  .mosaic-cell {
+    overflow: hidden;
+    position: relative;
+    opacity: 0;
+    animation: fadeIn 1s ease forwards;
+  }
+  .mosaic-cell:nth-child(1) { animation-delay: 0.4s; grid-row: 1 / 3; }
+  .mosaic-cell:nth-child(2) { animation-delay: 0.6s; }
+  .mosaic-cell:nth-child(3) { animation-delay: 0.8s; }
+  .mosaic-cell:nth-child(4) { animation-delay: 1.0s; grid-column: 1 / 3; }
+
+  .mosaic-cell-inner {
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.8s ease;
+  }
+  .mosaic-cell:hover .mosaic-cell-inner { transform: scale(1.06); }
+
+  /* Gradient art panels */
+  .panel-1 {
+    background:
+      radial-gradient(ellipse at 30% 40%, #c9956a 0%, #8b4513 40%, #2d1810 100%);
+  }
+  .panel-2 {
+    background:
+      radial-gradient(ellipse at 70% 30%, #d4a0a0 0%, #8b3a3a 50%, #1a0a0a 100%);
+  }
+  .panel-3 {
+    background:
+      radial-gradient(ellipse at 40% 60%, #b8c9a0 0%, #4a6741 50%, #1a2018 100%);
+  }
+  .panel-4 {
+    background:
+      radial-gradient(ellipse at 50% 50%, #c9b99a 0%, #7a6050 50%, #1a1208 100%);
+  }
+
+  .mosaic-label {
+    position: absolute;
+    bottom: 16px; left: 16px;
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+  }
+
+  /* MARQUEE */
+  .marquee-wrap {
+    background: var(--ink);
+    padding: 18px 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 22s linear infinite;
+  }
+  .marquee-item {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    padding-right: 48px;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--sand);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .marquee-dot {
+    width: 4px; height: 4px;
+    background: var(--rust);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ABOUT */
+  .about {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 0;
+    padding: 120px 52px;
+    align-items: start;
+  }
+  .about-label {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--rust);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .about-title {
+    font-size: clamp(36px, 4vw, 58px);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .about-title em { font-style: italic; color: var(--rust); }
+  .about-right {
+    padding-top: 8px;
+    padding-left: 60px;
+    border-left: 1px solid var(--sand);
+  }
+  .about-text {
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .about-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 32px;
+    margin-top: 48px;
+    padding-top: 48px;
+    border-top: 1px solid var(--cream);
+  }
+  .stat-num {
+    font-size: 52px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .stat-num span { color: var(--rust); }
+  .stat-label {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* WORKS */
+  .works {
+    padding: 80px 0 120px;
+  }
+  .works-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 0 52px;
+    margin-bottom: 56px;
+  }
+  .works-title {
+    font-size: clamp(40px, 5vw, 70px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .works-title em { font-style: italic; color: var(--rust); }
+  .works-filter {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+  }
+  .filter-btn {
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border: 1px solid var(--sand);
+    background: none;
+    color: var(--muted);
+    cursor: none;
+    transition: all 0.3s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--ink);
+    color: var(--bone);
+    border-color: var(--ink);
+  }
+
+  .works-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 4px;
+    padding: 0 4px;
+  }
+  .work-card {
+    position: relative;
+    overflow: hidden;
+    cursor: none;
+  }
+  .work-card:nth-child(1) { grid-column: 1 / 6; grid-row: 1 / 3; aspect-ratio: unset; min-height: 520px; }
+  .work-card:nth-child(2) { grid-column: 6 / 9; }
+  .work-card:nth-child(3) { grid-column: 9 / 13; }
+  .work-card:nth-child(4) { grid-column: 6 / 10; }
+  .work-card:nth-child(5) { grid-column: 10 / 13; }
+  .work-card:nth-child(6) { grid-column: 1 / 5; }
+  .work-card:nth-child(7) { grid-column: 5 / 9; }
+  .work-card:nth-child(8) { grid-column: 9 / 13; }
+
+  .work-card-img {
+    width: 100%; height: 100%;
+    min-height: 260px;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .work-card:hover .work-card-img { transform: scale(1.08); }
+
+  /* Artwork gradients */
+  .art-1 { background: radial-gradient(ellipse at 20% 70%, #7c4d8a 0%, #3d1a5c 40%, #0a0312 100%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3C/svg%3E"); }
+  .art-2 { background: linear-gradient(135deg, #d4956b 0%, #8b3a1a 50%, #2a0e08 100%); }
+  .art-3 { background: radial-gradient(ellipse at 80% 20%, #a8c9a0 0%, #3d6b35 40%, #0a180a 100%); }
+  .art-4 { background: linear-gradient(45deg, #6b8ea8 0%, #1a3d5c 50%, #020e18 100%); }
+  .art-5 { background: radial-gradient(ellipse at 50% 80%, #c9a870 0%, #6b4a1a 50%, #180e02 100%); }
+  .art-6 { background: linear-gradient(160deg, #c9708a 0%, #5c1a35 50%, #120008 100%); }
+  .art-7 { background: radial-gradient(ellipse at 30% 40%, #70a8c9 0%, #1a4a6b 50%, #020c18 100%); }
+  .art-8 { background: linear-gradient(90deg, #a8c9b0 0%, #2d6b40 50%, #051008 100%); }
+
+  /* Decorative overlays on artwork */
+  .art-1::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 60% 30%, rgba(200,150,240,0.3) 0%, transparent 60%); }
+  .art-3::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='100' cy='100' r='80' fill='none' stroke='rgba(168,201,160,0.2)' stroke-width='1'/%3E%3Ccircle cx='100' cy='100' r='60' fill='none' stroke='rgba(168,201,160,0.15)' stroke-width='1'/%3E%3C/svg%3E") center/60% no-repeat; }
+
+  .work-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity 0.4s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 28px;
+  }
+  .work-card:hover .work-overlay { opacity: 1; }
+  .work-tag {
+    font-family: var(--sans);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--rust-light);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .work-name {
+    font-family: var(--sans);
+    font-size: 20px;
+    font-weight: 300;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .work-arrow {
+    position: absolute;
+    top: 20px; right: 20px;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+  }
+
+  /* SERVICES */
+  .services {
+    background: var(--ink);
+    padding: 120px 52px;
+    color: var(--bone);
+  }
+  .services-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 80px;
+  }
+  .services-label {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--rust);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .services-title {
+    font-size: clamp(36px, 4vw, 62px);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .services-title em { font-style: italic; color: var(--rust-light); }
+  .services-intro {
+    max-width: 340px;
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: var(--sand);
+    padding-top: 12px;
+  }
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+  .service-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 48px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+  }
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s;
+  }
+  .service-card:hover { background: rgba(255,255,255,0.06); }
+  .service-card:hover::before { transform: scaleX(1); }
+  .service-num {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--rust);
+    margin-bottom: 28px;
+  }
+  .service-name {
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    color: var(--bone);
+  }
+  .service-desc {
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: var(--sand);
+  }
+  .service-icon {
+    position: absolute;
+    bottom: 32px; right: 32px;
+    font-size: 40px;
+    opacity: 0.08;
+  }
+
+  /* TESTIMONIAL */
+  .testimonial {
+    padding: 120px 52px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .testimonial::before {
+    content: '"';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 320px;
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1;
+    z-index: 0;
+    font-family: var(--sans);
+  }
+  .testimonial-inner { position: relative; z-index: 1; }
+  .testimonial-text {
+    font-size: clamp(22px, 3vw, 40px);
+    font-weight: 300;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    max-width: 860px;
+    margin: 0 auto 48px;
+  }
+  .testimonial-text em { font-style: italic; color: var(--rust); }
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .author-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--rust), var(--sand));
+  }
+  .author-name {
+    text-align: left;
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .author-role {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* CONTACT */
+  .contact {
+    background: var(--cream);
+    padding: 120px 52px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 100px;
+    align-items: center;
+  }
+  .contact-label {
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--rust);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .contact-title {
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .contact-title em { font-style: italic; color: var(--rust); }
+  .contact-sub {
+    font-size: 17px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+  .contact-form { display: flex; flex-direction: column; gap: 20px; }
+  .form-group { position: relative; }
+  .form-label {
+    display: block;
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%;
+    padding: 14px 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--sand);
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .form-input:focus { border-color: var(--rust); }
+  .form-input::placeholder { color: var(--sand); }
+  textarea.form-input { resize: none; height: 100px; }
+  .form-submit {
+    margin-top: 8px;
+    padding: 16px 40px;
+    background: var(--ink);
+    color: var(--bone);
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border: none;
+    cursor: none;
+    align-self: flex-start;
+    transition: background 0.3s;
+  }
+  .form-submit:hover { background: var(--rust); }
+
+  /* FOOTER */
+  footer {
+    background: var(--ink);
+    color: var(--bone);
+    padding: 60px 52px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 40px;
+  }
+  .footer-brand {
+    grid-column: 1 / 3;
+  }
+  .footer-logo {
+    font-family: var(--sans);
+    font-size: 22px;
+    letter-spacing: 0.35em;
+    font-weight: 300;
+    margin-bottom: 16px;
+  }
+  .footer-tagline {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--sand);
+    line-height: 1.7;
+    max-width: 320px;
+  }
+  .footer-col-title {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--rust-light);
+    margin-bottom: 20px;
+  }
+  .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-links a {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--sand);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer-links a:hover { color: var(--bone); }
+  .footer-bottom {
+    grid-column: 1 / -1;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 32px;
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-copy {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+  .footer-socials { display: flex; gap: 20px; }
+  .footer-socials a {
+    font-family: var(--sans);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .footer-socials a:hover { color: var(--rust-light); }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { height: 50vh; }
+    nav { padding: 24px 28px; }
+    .hero-left, .about, .services, .contact { padding-left: 28px; padding-right: 28px; }
+    .about { grid-template-columns: 1fr; }
+    .about-right { padding-left: 0; border-left: none; border-top: 1px solid var(--sand); padding-top: 40px; margin-top: 40px; }
+    .services-grid { grid-template-columns: 1fr; }
+    .contact { grid-template-columns: 1fr; gap: 60px; }
+    footer { grid-template-columns: 1fr 1fr; }
+    .footer-brand { grid-column: 1 / -1; }
+    .works-filter { display: none; }
+    .works-grid { grid-template-columns: 1fr 1fr; }
+    .work-card:nth-child(n) { grid-column: auto; grid-row: auto; min-height: 200px; }
+    .services-header { flex-direction: column; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <svg class="nav-logo-mark" width="28" height="26" viewBox="0 0 72 66" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="36,4 68,60 4,60" stroke="rgba(15,13,10,0.5)" stroke-width="1.5" fill="none"/>
+      <circle cx="36" cy="4" r="3" fill="#b85c38"/>
+      <circle cx="68" cy="60" r="3" fill="#b85c38"/>
+      <circle cx="4" cy="60" r="3" fill="#b85c38"/>
+    </svg>
+    O &nbsp; A &nbsp; K
+  </a>
+  <ul class="nav-links">
+    <li><a href="#works">Works</a></li>
+    <li><a href="#about">Studio</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <p class="hero-eyebrow">Architecture · Interior Design · 2026</p>
+    <h1 class="hero-title">Space as<br><em>living</em><br>art</h1>
+    <p class="hero-sub">OAK is a boutique architecture and interior design studio - shaping environments that are as considered in detail as they are bold in vision.</p>
+    <div class="hero-cta">
+      <a href="#works" class="btn-primary">View Projects →</a>
+      <a href="#about" class="btn-secondary">About OAK</a>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="hero-mosaic">
+      <div class="mosaic-cell">
+        <div class="mosaic-cell-inner panel-1"></div>
+        <span class="mosaic-label">Residential · Chicago</span>
+      </div>
+      <div class="mosaic-cell">
+        <div class="mosaic-cell-inner panel-2"></div>
+        <span class="mosaic-label">Commercial · New York</span>
+      </div>
+      <div class="mosaic-cell">
+        <div class="mosaic-cell-inner panel-3"></div>
+        <span class="mosaic-label">Interior · London</span>
+      </div>
+      <div class="mosaic-cell">
+        <div class="mosaic-cell-inner panel-4"></div>
+        <span class="mosaic-label">Hospitality · Los Angeles</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item"><span class="marquee-dot"></span>Architecture<span class="marquee-dot"></span>Interior Design<span class="marquee-dot"></span>Residential<span class="marquee-dot"></span>Commercial<span class="marquee-dot"></span>Hospitality<span class="marquee-dot"></span>Spatial Planning<span class="marquee-dot"></span>Bespoke Interiors<span class="marquee-dot"></span>Material Curation</div>
+    <div class="marquee-item"><span class="marquee-dot"></span>Architecture<span class="marquee-dot"></span>Interior Design<span class="marquee-dot"></span>Residential<span class="marquee-dot"></span>Commercial<span class="marquee-dot"></span>Hospitality<span class="marquee-dot"></span>Spatial Planning<span class="marquee-dot"></span>Bespoke Interiors<span class="marquee-dot"></span>Material Curation</div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="about-left reveal">
+    <p class="about-label">The Studio</p>
+    <h2 class="about-title">Where craft<br>meets <em>vision</em></h2>
+  </div>
+  <div class="about-right reveal">
+    <p class="about-text">OAK is a boutique architecture and interior design studio built on the belief that space shapes experience. We work from the ground up - conceiving buildings and interiors as a unified whole, where structure, light, and material serve a singular vision.</p>
+    <p class="about-text">From private residences to hospitality environments, every project is a collaboration grounded in rigorous craft, purposeful restraint, and an unwavering attention to the way people move through and inhabit the spaces we create.</p>
+    <div class="about-stats">
+      <div>
+        <div class="stat-num">14<span>+</span></div>
+        <div class="stat-label">Years in practice</div>
+      </div>
+      <div>
+        <div class="stat-num">87</div>
+        <div class="stat-label">Projects completed</div>
+      </div>
+      <div>
+        <div class="stat-num">12</div>
+        <div class="stat-label">Awards received</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKS -->
+<section class="works" id="works">
+  <div class="works-header reveal">
+    <h2 class="works-title">Selected<br><em>Works</em></h2>
+    <ul class="works-filter">
+      <li><button class="filter-btn active">All</button></li>
+      <li><button class="filter-btn">Architecture</button></li>
+      <li><button class="filter-btn">Interiors</button></li>
+      <li><button class="filter-btn">Hospitality</button></li>
+    </ul>
+  </div>
+  <div class="works-grid">
+    <div class="work-card">
+      <div class="work-card-img art-1"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Architecture · 2025</span>
+        <h3 class="work-name">The Verdun Residence</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-2"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Interior Design · 2025</span>
+        <h3 class="work-name">Ember Loft, SoHo</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-3"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Hospitality · 2024</span>
+        <h3 class="work-name">Canopy Hotel Lobby</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-4"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Architecture · 2024</span>
+        <h3 class="work-name">Saltwater Pavilion</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-5"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Interior Design · 2024</span>
+        <h3 class="work-name">Dune House, Malibu</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-6"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Commercial · 2023</span>
+        <h3 class="work-name">Studio Maison, Paris</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-7"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Architecture · 2023</span>
+        <h3 class="work-name">Nordic Retreat</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-img art-8"></div>
+      <div class="work-overlay">
+        <span class="work-tag">Interior Design · 2023</span>
+        <h3 class="work-name">Moss & Slate Penthouse</h3>
+        <span class="work-arrow">↗</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="services" id="services">
+  <div class="services-header reveal">
+    <div>
+      <p class="services-label">What We Do</p>
+      <h2 class="services-title">Design as<br><em>discipline</em></h2>
+    </div>
+    <p class="services-intro">From city-scale master planning to bespoke interior finishing, OAK leads every project from first sketch to final finish - architecture, urban design, and interiors as one inseparable practice.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card reveal">
+      <p class="service-num">01</p>
+      <h3 class="service-name">Architecture</h3>
+      <p class="service-desc">Full-service architectural design for residential, commercial, and hospitality projects - from concept and planning through construction administration.</p>
+      <span class="service-icon">⬡</span>
+    </div>
+    <div class="service-card reveal">
+      <p class="service-num">02</p>
+      <h3 class="service-name">Urban Design</h3>
+      <p class="service-desc">Strategic design at the scale of the city - master planning, public realm, mixed-use districts, and transit-oriented development that shapes how communities grow and gather.</p>
+      <span class="service-icon">◻</span>
+    </div>
+    <div class="service-card reveal">
+      <p class="service-num">03</p>
+      <h3 class="service-name">Interior Design</h3>
+      <p class="service-desc">Bespoke interior environments conceived as extensions of the architecture - where spatial flow, light, and material tell a coherent story.</p>
+      <span class="service-icon">◈</span>
+    </div>
+    <div class="service-card reveal">
+      <p class="service-num">04</p>
+      <h3 class="service-name">Spatial Planning</h3>
+      <p class="service-desc">Rigorous spatial analysis and programming that optimizes how people move through and experience every square foot of a building or interior.</p>
+      <span class="service-icon">◎</span>
+    </div>
+    <div class="service-card reveal">
+      <p class="service-num">05</p>
+      <h3 class="service-name">Material Curation</h3>
+      <p class="service-desc">We source and specify materials with the precision of a craftsperson - considering tactility, durability, sustainability, and aesthetic harmony at every scale.</p>
+      <span class="service-icon">⬜</span>
+    </div>
+    <div class="service-card reveal">
+      <p class="service-num">06</p>
+      <h3 class="service-name">FF&E Procurement</h3>
+      <p class="service-desc">End-to-end furniture, fixture, and equipment specification and procurement - from one-of-a-kind custom pieces to carefully vetted maker relationships.</p>
+      <span class="service-icon">◇</span>
+    </div>
+    <div class="service-card reveal">
+      <p class="service-num">07</p>
+      <h3 class="service-name">Project Management</h3>
+      <p class="service-desc">We manage contractors, timelines, and budgets with the same attention we bring to design - ensuring the built result matches the vision without compromise.</p>
+      <span class="service-icon">▣</span>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial">
+  <div class="testimonial-inner reveal">
+    <p class="testimonial-text">"OAK didn't just design our home - they understood us. Every room feels exactly like who we are, but better than we could have imagined. That's a rare thing."</p>
+    <div class="testimonial-author">
+      <div class="author-avatar"></div>
+      <div>
+        <p class="author-name">Margaux Delacroix</p>
+        <p class="author-role">Interior Designer, New York</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="reveal">
+    <p class="contact-label">Let's Collaborate</p>
+    <h2 class="contact-title">Start a<br><em>project</em></h2>
+    <p class="contact-sub">Tell us about your space and vision. We'll respond within 48 hours with ideas and next steps.</p>
+  </div>
+  <form class="contact-form reveal" id="contactForm">
+    <div class="form-group">
+      <label class="form-label">Your Name</label>
+      <input type="text" id="cf-name" class="form-input" placeholder="e.g. Isabelle Fontaine" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input type="email" id="cf-email" class="form-input" placeholder="hello@yourstudio.com" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Project Type</label>
+      <input type="text" id="cf-type" class="form-input" placeholder="Architecture, Interior Design, Both...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tell Us More</label>
+      <textarea id="cf-message" class="form-input" placeholder="Describe your space, timeline, and vision..." required></textarea>
+    </div>
+    <button type="submit" class="form-submit" id="cf-submit">
+      <span id="cf-btn-text">Send Enquiry →</span>
+      <span id="cf-btn-loading" style="display:none;">Sending...</span>
+    </button>
+    <div id="cf-success" style="display:none; margin-top:20px;">
+      <p style="font-family:var(--sans); font-size:13px; color:var(--rust); letter-spacing:0.1em;">
+        Message received. We'll be in touch within 48 hours.
+      </p>
+    </div>
+    <div id="cf-error" style="display:none; margin-top:20px;">
+      <p style="font-family:var(--sans); font-size:13px; color:#c0392b; letter-spacing:0.1em;">
+        Something went wrong. Please email us directly at <a href="mailto:olantsyferova@gmail.com" style="color:#c0392b;">olantsyferova@gmail.com</a>
+      </p>
+    </div>
+  </form>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <!-- OAK Logomark: geometric triangle with O, A, K at vertices and dots at corners -->
+    <svg class="footer-logomark" width="72" height="66" viewBox="0 0 72 66" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="OAK logomark">
+      <polygon points="36,4 68,60 4,60" stroke="rgba(201,185,154,0.55)" stroke-width="1" fill="none"/>
+      <circle cx="36" cy="4" r="2.5" fill="#b85c38"/>
+      <circle cx="68" cy="60" r="2.5" fill="#b85c38"/>
+      <circle cx="4" cy="60" r="2.5" fill="#b85c38"/>
+    </svg>
+    <p class="footer-logo">O &nbsp; A &nbsp; K</p>
+    <p class="footer-tagline">A boutique architecture and interior design studio - crafting spaces that are as rigorous in structure as they are rich in experience.</p>
+  </div>
+  <div>
+    <p class="footer-col-title">Navigation</p>
+    <ul class="footer-links">
+      <li><a href="#works">Projects</a></li>
+      <li><a href="#about">Studio</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </div>
+  <div>
+    <p class="footer-col-title">Services</p>
+    <ul class="footer-links">
+      <li><a href="#">Architecture</a></li>
+      <li><a href="#">Urban Design</a></li>
+      <li><a href="#">Interior Design</a></li>
+      <li><a href="#">FF&E Procurement</a></li>
+    </ul>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2026 OAK Studio · All rights reserved</p>
+    <div class="footer-socials">
+      <a href="#">Instagram</a>
+      <a href="#">Pinterest</a>
+      <a href="#">Behance</a>
+      <a href="#">LinkedIn</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // CURSOR
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animateRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button, .work-card, .mosaic-cell, .filter-btn').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.classList.add('hover');
+      ring.classList.add('hover');
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.classList.remove('hover');
+      ring.classList.remove('hover');
+    });
+  });
+
+  // SCROLL REVEAL
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, 100);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // FILTER BUTTONS
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+  // ── EmailJS Configuration ─────────────────────────────────────────────────
+  // SETUP INSTRUCTIONS:
+  // 1. Create a free account at https://www.emailjs.com
+  // 2. Add an Email Service (Gmail) and note your Service ID
+  // 3. Create an Email Template with variables:
+  //    {{from_name}}, {{from_email}}, {{project_type}}, {{message}}
+  //    Set "To Email" to olantsyferova@gmail.com
+  // 4. Go to Account > API Keys and copy your Public Key
+  // 5. Replace the three placeholder values below with your real IDs
+
+  const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // e.g. 'abc123XYZ'
+  const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // e.g. 'service_oak'
+  const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // e.g. 'template_enquiry'
+
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const name    = document.getElementById('cf-name').value.trim();
+    const email   = document.getElementById('cf-email').value.trim();
+    const type    = document.getElementById('cf-type').value.trim();
+    const message = document.getElementById('cf-message').value.trim();
+
+    // UI states
+    const btnText    = document.getElementById('cf-btn-text');
+    const btnLoading = document.getElementById('cf-btn-loading');
+    const btnSubmit  = document.getElementById('cf-submit');
+    const successMsg = document.getElementById('cf-success');
+    const errorMsg   = document.getElementById('cf-error');
+
+    // Loading state
+    btnText.style.display    = 'none';
+    btnLoading.style.display = 'inline';
+    btnSubmit.disabled       = true;
+    btnSubmit.style.opacity  = '0.6';
+    successMsg.style.display = 'none';
+    errorMsg.style.display   = 'none';
+
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        from_name:    name,
+        from_email:   email,
+        project_type: type || 'Not specified',
+        message:      message,
+        to_email:     'olantsyferova@gmail.com',
+        reply_to:     email
+      });
+
+      // Success
+      successMsg.style.display = 'block';
+      this.reset();
+    } catch (err) {
+      console.error('EmailJS error:', err);
+      errorMsg.style.display = 'block';
+    } finally {
+      btnText.style.display    = 'inline';
+      btnLoading.style.display = 'none';
+      btnSubmit.disabled       = false;
+      btnSubmit.style.opacity  = '1';
+    }
+  });
+</script>
+
+</body>
+</html>
